@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://dtfu2p85188i5"]
+
+[ext_resource type="PackedScene" uid="uid://c8hmitfa7qafa" path="res://assets/levels/test/test_level.tscn" id="1_db5cl"]
+[ext_resource type="PackedScene" uid="uid://5mbkimak85ec" path="res://assets/player/player.tscn" id="2_06ig3"]
+
+[node name="Main" type="Node"]
+physics_interpolation_mode = 1
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="TestLevel" parent="." instance=ExtResource("1_db5cl")]
+
+[node name="Player" parent="." instance=ExtResource("2_06ig3")]
+position = Vector2(228, 480)
