@@ -1,8 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://5mbkimak85ec"]
+[gd_scene load_steps=10 format=3 uid="uid://5mbkimak85ec"]
 
 [ext_resource type="Texture2D" uid="uid://d1ja0hg685ahs" path="res://assets/player/player.png" id="1_d6veg"]
 [ext_resource type="Script" uid="uid://dn5t4dmefuox5" path="res://src/player/Player.cs" id="1_h6syq"]
-[ext_resource type="Script" uid="uid://c7a6lixqfedgy" path="res://src/player/GroundedHbox.cs" id="3_v2miy"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_h6syq"]
 atlas = ExtResource("1_d6veg")
@@ -58,22 +57,15 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_kwvpd"]
-size = Vector2(12, 13)
+size = Vector2(8, 13)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_h6syq"]
-size = Vector2(12, 2)
-
-[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("AnimationNode", "GroundedCollision")]
+[node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("AnimationNode")]
 physics_interpolation_mode = 1
 scale = Vector2(4, 4)
 collision_mask = 2
 floor_stop_on_slope = false
 script = ExtResource("1_h6syq")
 AnimationNode = NodePath("Animation")
-GroundedCollision = NodePath("GroundedHbox")
-Gravity = 1000
-JumpLength = 400
-WalkTraction = 400
 
 [node name="Animation" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_tb4ck")
@@ -82,16 +74,3 @@ animation = &"idle"
 [node name="MainHbox" type="CollisionShape2D" parent="."]
 position = Vector2(0, 1.5)
 shape = SubResource("RectangleShape2D_kwvpd")
-
-[node name="GroundedHbox" type="Area2D" parent="."]
-collision_layer = 0
-collision_mask = 2
-script = ExtResource("3_v2miy")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="GroundedHbox"]
-position = Vector2(0, 8)
-shape = SubResource("RectangleShape2D_h6syq")
-debug_color = Color(1.20327e-06, 0.646174, 0.243373, 0.42)
-
-[connection signal="body_entered" from="GroundedHbox" to="GroundedHbox" method="OnBodyEntered"]
-[connection signal="body_exited" from="GroundedHbox" to="GroundedHbox" method="OnBodyExited"]
