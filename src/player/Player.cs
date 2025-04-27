@@ -1,11 +1,10 @@
 using System;
 using Godot;
 
-namespace Angle.player;
-
 public partial class Player : CharacterBody2D
 {
     [Export] public AnimatedSprite2D AnimationNode;
+    [Export] public Gun GunNode;
 
     //WALK CONSTANTS
     [Export] public int MaxWalkSpeed = 300;
@@ -30,7 +29,7 @@ public partial class Player : CharacterBody2D
         return new Vector2(right - left, 0);
     }
 
-    private void ApplyHorizontalMovement(ref Vector2 movement, Vector2 input, double delta)
+    private void ApplyHorizontalMovement(ref Vector2 movement, Vector2 input)
     {
         if (input.X == 0)
         {
@@ -45,7 +44,7 @@ public partial class Player : CharacterBody2D
         }
     }
 
-    private void ApplyVerticalMovement(ref Vector2 movement, Vector2 input, double delta)
+    private void ApplyVerticalMovement(ref Vector2 movement, double delta)
     {
         TickCoyoteTimer(delta);
         TickJumpBufferTimer(delta);
@@ -54,7 +53,7 @@ public partial class Player : CharacterBody2D
         {
             _jumpBufferTimer = 0;
             _coyoteTimer = 0;
-            ApplyJump(ref movement, delta);
+            ApplyJump(ref movement);
         }
     }
 
@@ -72,11 +71,10 @@ public partial class Player : CharacterBody2D
         else if (_jumpBufferTimer > 0) _jumpBufferTimer -= (float)delta;
     }
 
-    private void ApplyJump(ref Vector2 movement, double delta)
+    private void ApplyJump(ref Vector2 movement)
     {
         movement.Y = -JumpStrength;
     }
-
 
     private void ApplyGravity(ref Vector2 movement, double delta)
     {
@@ -103,6 +101,16 @@ public partial class Player : CharacterBody2D
         movement.X = Mathf.Clamp(movement.X, -MaxWalkSpeed, MaxWalkSpeed);
     }
 
+    private void HandleGun()
+    {
+        var primary = Input.IsActionPressed("primary");
+        if (primary && GunNode.CanFire())
+        {
+            var direction = GetLocalMousePosition().Normalized();
+            GunNode.Handle(Position, direction);
+        }
+    }
+
 
     public override void _Ready()
     {
@@ -114,12 +122,15 @@ public partial class Player : CharacterBody2D
         var movement = Velocity;
         var input = GetInput();
 
-        ApplyHorizontalMovement(ref movement, input, delta);
-        ApplyVerticalMovement(ref movement, input, delta);
+        ApplyHorizontalMovement(ref movement, input);
+        ApplyVerticalMovement(ref movement, delta);
         ClampVelocity(ref movement);
+
+        HandleGun();
 
         Velocity = movement;
         MoveAndSlide();
+
         if (!IsOnFloor()) AnimationNode.Play("air");
         AnimationNode.FlipH = movement.X < 0;
     }

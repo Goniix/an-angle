@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b080elxldp2d4"]
+
+[ext_resource type="Script" uid="uid://bvshvfvrdeenu" path="res://src/components/Gun.cs" id="1_mk4l4"]
+
+[node name="Gun" type="Node"]
+script = ExtResource("1_mk4l4")
