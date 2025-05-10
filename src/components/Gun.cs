@@ -2,9 +2,9 @@ using Godot;
 
 public partial class Gun : Node
 {
-    [Export] public int Power = 1000;
-    [Export] public float Cooldown = 0.5f;
-    [Export] public float FallOf = 0.5f;
+    [Export] public int Power = 800;
+    [Export] public float Cooldown = 0.1f;
+    [Export] public float FallOf = 0.8f;
     [Export] public float Size = 1f;
     private float _cooldownCounter;
     private PackedScene _bulletScene = GD.Load<PackedScene>("res://assets/bullet/bullet.tscn");
@@ -13,6 +13,7 @@ public partial class Gun : Node
     {
         _cooldownCounter = Cooldown;
         var bullet = _bulletScene.Instantiate<Bullet>();
+        bullet._Ready();
         bullet.Position = position;
         bullet.GravityScale = FallOf;
         bullet.SetScale(Size);

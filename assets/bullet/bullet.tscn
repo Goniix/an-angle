@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://cwvp6anewcdr2"]
+[gd_scene load_steps=5 format=3 uid="uid://cwvp6anewcdr2"]
 
 [ext_resource type="Texture2D" uid="uid://dvbsfsm61alwv" path="res://assets/bullet/trashbullet.png" id="1_a4s3u"]
 [ext_resource type="Script" uid="uid://c6xv4v8a5yolh" path="res://src/bullet/Bullet.cs" id="1_adgrp"]
+[ext_resource type="PackedScene" uid="uid://c3hm71u5vsfw0" path="res://assets/trail/Trail.tscn" id="3_21ral"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_c0gqx"]
 radius = 8.0
@@ -16,3 +17,8 @@ shape = SubResource("CircleShape2D_c0gqx")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_a4s3u")
+
+[node name="Trail" parent="." instance=ExtResource("3_21ral")]
+antialiased = true
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
