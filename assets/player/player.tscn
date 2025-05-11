@@ -78,3 +78,4 @@ position = Vector2(0, 1.5)
 shape = SubResource("RectangleShape2D_kwvpd")
 
 [node name="Gun" parent="." instance=ExtResource("3_v2miy")]
+Size = 4.0
