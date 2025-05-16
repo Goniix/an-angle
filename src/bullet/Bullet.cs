@@ -8,8 +8,8 @@ public partial class Bullet : RigidBody2D
 
     public override void _Ready()
     {
-        ContactMonitor = true;
-        MaxContactsReported = 10;
+        // ContactMonitor = true;
+        // MaxContactsReported = 10;
         _trail = GetNode<Line2D>("Trail") as Trail;
         _collisionShape = GetNode<CollisionShape2D>("CollisionShape2D");
         _sprite = GetNode<Sprite2D>("Sprite2D");
@@ -25,6 +25,6 @@ public partial class Bullet : RigidBody2D
 
     public void _on_body_entered(Node body)
     {
-        QueueFree();
+        // QueueFree();
     }
 }

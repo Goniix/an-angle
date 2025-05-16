@@ -28,7 +28,7 @@ project/assembly_name="Angle"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/trail_2d/plugin.cfg")
+enabled=PackedStringArray()
 
 [input]
 
