@@ -1,35 +1,35 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(BoxProjector))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class Player : MonoBehaviour
 {
     //WALK CONSTANTS
-    public int maxWalkSpeed = 100;
-    public float walkTraction = 0.1f;
-    public float stopTraction = 0.2f;
+    public int walkSpeed;
+    public float walkTraction;
+    public float groundFriction;
+    public float airFriction;
 
     //JUMP CONSTANTS
-    public int gravity = 1400;
-    public int jumpStrength = 600;
-    public int jumpApexTresHold = 20;
-    public float groundedDistance = 0.2f;
+    public int jumpStrength;
+    public int jumpApexTresHold;
 
     //TIMERS
-    public float coyoteTime = 0.1f;
-    public float jumpBufferTime = 0.1f;
+    public float coyoteTime;
+    public float jumpBufferTime;
+
+    private BoxProjector _boxProjector;
+
+    private Rigidbody2D _rb;
+
     private float _coyoteTimer;
-    private InputAction _jumpAction;
     private float _jumpBufferTimer;
 
-    //MOVEMENT VARIABLES
-    // private Vector2 _velocity;
-
-    //INPUT ACTIONS
     private InputAction _moveAction;
+    private InputAction _jumpAction;
 
-    //COMPONENTS
-    private Rigidbody2D _rigidbody;
-
+    private Vector2 _velocity;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -39,26 +39,21 @@ public class Player : MonoBehaviour
         _jumpAction = InputSystem.actions.FindAction("Jump");
         _jumpAction.Enable();
 
-        _rigidbody = GetComponent<Rigidbody2D>();
+        _rb = GetComponent<Rigidbody2D>();
+        _boxProjector = GetComponent<BoxProjector>();
     }
 
-    // Update is called once per frame
     private void FixedUpdate()
     {
-        var delta = Time.deltaTime;
-        var movement = _rigidbody.linearVelocity;
         var input = GetInput();
 
-        ApplyHorizontalMovement(ref movement, input);
-        ApplyVerticalMovement(ref movement, delta);
-        ClampVelocity(ref movement);
+        ApplyHorizontalMovement(input);
+        ApplyFriction(input);
+        _rb.gravityScale = GetGravityScale();
+        ApplyVerticalMovement();
 
-        // HandleGun();
-
-        _rigidbody.MovePosition((Vector2)transform.position + movement * delta);
-        // MoveAndSlide();
-        //
         // if (!IsOnFloor()) AnimationNode.Play("air");
+
         // AnimationNode.FlipH = movement.X < 0;
     }
 
@@ -69,80 +64,81 @@ public class Player : MonoBehaviour
 
     private bool IsGrounded()
     {
-        return _rigidbody.linearVelocity.y == 0 &&
-               Physics.Raycast(transform.position, Vector3.down, out _, groundedDistance);
+        return _boxProjector.Collides();
     }
 
-    private void ApplyHorizontalMovement(ref Vector2 movement, Vector2 input)
+    private void ApplyHorizontalMovement(Vector2 input)
+    {
+        var targetSpeed = input.x * walkSpeed;
+        //calculate difference between current velocity and desired velocity
+        var speedDif = targetSpeed - _rb.linearVelocity.x;
+        //change acceleration rate depending on situation
+        var accelRate = Mathf.Abs(targetSpeed) > 0.01f ? walkTraction : walkTraction * 0.5f;
+        //applies acceleration to speed difference, the raises to a set power so acceleration increases with higher speeds
+        //finally multiplies by sign to reapply direction
+        var movement = Mathf.Pow(Mathf.Abs(speedDif) * accelRate, 2) * Mathf.Sign(speedDif);
+
+        //applies force force to rigidbody, multiplying by Vector2.right so that it only affects X axis
+        _rb.AddForce(Vector2.right * (movement * Time.deltaTime));
+    }
+
+    private void ApplyFriction(Vector2 input)
     {
         if (input.x == 0)
         {
-            movement.x = Mathf.Lerp(movement.x, 0, stopTraction);
-            // AnimationNode.Play("idle");
-        }
-        else
-        {
-            if ((int)Mathf.Sign(input.x) != (int)Mathf.Sign(movement.x)) movement.x = 0;
-            movement.x = Mathf.Lerp(movement.x, maxWalkSpeed * input.x, walkTraction);
-            // AnimationNode.Play("run");
+            var amount = Mathf.Min(Mathf.Abs(_rb.linearVelocity.x), IsGrounded() ? groundFriction : airFriction);
+
+            amount *= Mathf.Sign(_rb.linearVelocity.x);
+
+            _rb.AddForce(Vector2.right * -amount, ForceMode2D.Impulse);
         }
     }
 
-    private void ApplyVerticalMovement(ref Vector2 movement, double delta)
+    private void ApplyVerticalMovement()
     {
+        var delta = Time.deltaTime;
         TickCoyoteTimer(delta);
         TickJumpBufferTimer(delta);
-        ApplyGravity(ref movement, delta);
         if (_jumpBufferTimer > 0 && _coyoteTimer > 0)
         {
             _jumpBufferTimer = 0;
             _coyoteTimer = 0;
-            ApplyJump(ref movement);
+            ApplyJump();
         }
     }
 
     private void TickCoyoteTimer(double delta)
     {
         if (IsGrounded()) _coyoteTimer = coyoteTime;
-        else if (_coyoteTimer > 0) _coyoteTimer -= (float)delta;
+        else if (_coyoteTimer > 0.0f) _coyoteTimer -= (float)delta;
     }
 
     private void TickJumpBufferTimer(double delta)
     {
-        var jump = _jumpAction.WasPressedThisFrame();
+        var jump = _jumpAction.triggered;
 
         if (jump) _jumpBufferTimer = jumpBufferTime;
-        else if (_jumpBufferTimer > 0) _jumpBufferTimer -= (float)delta;
+        else if (_jumpBufferTimer > 0.0f) _jumpBufferTimer -= (float)delta;
     }
 
-    private void ApplyJump(ref Vector2 movement)
+    private void ApplyJump()
     {
-        movement.y = -jumpStrength;
+        _rb.AddForce(Vector2.up * jumpStrength, ForceMode2D.Impulse);
+        _velocity.y = jumpStrength;
     }
 
-    private void ApplyGravity(ref Vector2 movement, double delta)
+    private float GetGravityScale()
     {
-        movement.y -= gravity * GetGravityScale(movement) * (float)delta;
-    }
+        var jump = _jumpAction.IsPressed();
 
 
-    private float GetGravityScale(Vector2 movement)
-    {
-        var jump = _jumpAction.WasPressedThisFrame();
-
-
-        var isFalling = movement.y > 0;
-        var isAtApex = Mathf.Abs(movement.y) < jumpApexTresHold;
+        var isFalling = _rb.linearVelocity.y < 0;
+        var isAtApex = Mathf.Abs(_rb.linearVelocity.y) < jumpApexTresHold;
         var jumpCancel = !isFalling && !jump;
 
         if (isAtApex) return 0.9f;
         if (jumpCancel || isFalling) return 2f;
 
         return 1.0f;
-    }
-
-    private void ClampVelocity(ref Vector2 movement)
-    {
-        movement.x = Mathf.Clamp(movement.x, -maxWalkSpeed, maxWalkSpeed);
     }
 }
