@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -23,13 +24,11 @@ public class Player : MonoBehaviour
 
     private Rigidbody2D _rb;
 
-    private float _coyoteTimer;
-    private float _jumpBufferTimer;
+    private Timer _coyoteTimer;
+    private Timer _jumpBufferTimer;
 
     private InputAction _moveAction;
     private InputAction _jumpAction;
-
-    private Vector2 _velocity;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -41,6 +40,14 @@ public class Player : MonoBehaviour
 
         _rb = GetComponent<Rigidbody2D>();
         _boxProjector = GetComponent<BoxProjector>();
+
+        _jumpBufferTimer = this.AddComponent<Timer>();
+        _jumpBufferTimer.duration = jumpBufferTime;
+        _jumpBufferTimer.ResetCondition = () => _jumpAction.triggered;
+
+        _coyoteTimer = this.AddComponent<Timer>();
+        _coyoteTimer.duration = coyoteTime;
+        _coyoteTimer.ResetCondition = IsGrounded;
     }
 
     private void FixedUpdate()
@@ -96,35 +103,18 @@ public class Player : MonoBehaviour
 
     private void ApplyVerticalMovement()
     {
-        var delta = Time.deltaTime;
-        TickCoyoteTimer(delta);
-        TickJumpBufferTimer(delta);
-        if (_jumpBufferTimer > 0 && _coyoteTimer > 0)
+        if (!_jumpBufferTimer.TimedOut() && !_coyoteTimer.TimedOut())
         {
-            _jumpBufferTimer = 0;
-            _coyoteTimer = 0;
+            _jumpBufferTimer.TimeOut();
+            _coyoteTimer.TimeOut();
             ApplyJump();
         }
     }
 
-    private void TickCoyoteTimer(double delta)
-    {
-        if (IsGrounded()) _coyoteTimer = coyoteTime;
-        else if (_coyoteTimer > 0.0f) _coyoteTimer -= (float)delta;
-    }
-
-    private void TickJumpBufferTimer(double delta)
-    {
-        var jump = _jumpAction.triggered;
-
-        if (jump) _jumpBufferTimer = jumpBufferTime;
-        else if (_jumpBufferTimer > 0.0f) _jumpBufferTimer -= (float)delta;
-    }
-
     private void ApplyJump()
     {
+        _rb.linearVelocityY = Mathf.Max(0, _rb.linearVelocityY); //reset velocity if falling
         _rb.AddForce(Vector2.up * jumpStrength, ForceMode2D.Impulse);
-        _velocity.y = jumpStrength;
     }
 
     private float GetGravityScale()
@@ -136,8 +126,8 @@ public class Player : MonoBehaviour
         var isAtApex = Mathf.Abs(_rb.linearVelocity.y) < jumpApexTresHold;
         var jumpCancel = !isFalling && !jump;
 
-        if (isAtApex) return 0.9f;
         if (jumpCancel || isFalling) return 2f;
+        if (isAtApex) return 0.9f;
 
         return 1.0f;
     }
