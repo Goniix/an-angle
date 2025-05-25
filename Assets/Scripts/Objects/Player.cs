@@ -4,8 +4,13 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(BoxProjector))]
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class Player : MonoBehaviour
 {
+    private static readonly int AirBorne = Animator.StringToHash("AirBorne");
+    private static readonly int PlayerInput = Animator.StringToHash("PlayerInput");
+
     //WALK CONSTANTS
     public int walkSpeed;
     public float walkTraction;
@@ -23,6 +28,8 @@ public class Player : MonoBehaviour
     //COMPONENTS
     private BoxProjector _boxProjector;
     private Rigidbody2D _rb;
+    private Animator _animator;
+    private SpriteRenderer _spriteRenderer;
 
     //RUNTIME COMPONENTS
     private Timer _coyoteTimer;
@@ -42,6 +49,8 @@ public class Player : MonoBehaviour
 
         _rb = GetComponent<Rigidbody2D>();
         _boxProjector = GetComponent<BoxProjector>();
+        _animator = GetComponent<Animator>();
+        _spriteRenderer = GetComponent<SpriteRenderer>();
 
         _jumpBufferTimer = this.AddComponent<Timer>();
         _jumpBufferTimer.duration = jumpBufferTime;
@@ -61,9 +70,10 @@ public class Player : MonoBehaviour
         _rb.gravityScale = GetGravityScale();
         ApplyVerticalMovement();
 
-        // if (!IsOnFloor()) AnimationNode.Play("air");
+        _animator.SetBool(AirBorne, !IsGrounded());
+        _animator.SetBool(PlayerInput, input.magnitude > 0);
 
-        // AnimationNode.FlipH = movement.X < 0;
+        _spriteRenderer.flipX = input.x < 0;
     }
 
     private Vector2 GetInput()
