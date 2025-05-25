@@ -2091,6 +2091,7 @@ GameObject:
   - component: {fileID: 8815637254140658281}
   - component: {fileID: 9088050407844561053}
   - component: {fileID: 2259610599005284387}
+  - component: {fileID: 9088050407844561054}
   - component: {fileID: 1431180039530951161}
   - component: {fileID: 7719309558339240723}
   - component: {fileID: 2274003585352611315}
@@ -2174,7 +2175,7 @@ MonoBehaviour:
   mask:
     serializedVersion: 2
     m_Bits: 64
-  drawGizmo: 1
+  drawGizmo: 0
 --- !u!61 &2274003585352611315
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -2305,6 +2306,21 @@ MonoBehaviour:
   jumpApexTresHold: 1
   coyoteTime: 0.15
   jumpBufferTime: 0.15
+--- !u!114 &9088050407844561054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 670256137753421419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15d16b26874b591469c189e2c7bb2817, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bulletPrefab: {fileID: 4428891246941689231, guid: 9370254ada8d7674d8876a70dc180ff2, type: 3}
+  strength: 1000
+  cooldownTime: 0.2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

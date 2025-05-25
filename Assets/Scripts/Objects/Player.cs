@@ -20,18 +20,20 @@ public class Player : MonoBehaviour
     public float coyoteTime;
     public float jumpBufferTime;
 
+    //COMPONENTS
     private BoxProjector _boxProjector;
-
     private Rigidbody2D _rb;
 
+    //RUNTIME COMPONENTS
     private Timer _coyoteTimer;
     private Timer _jumpBufferTimer;
 
+    //INPUT ACTIONS
     private InputAction _moveAction;
     private InputAction _jumpAction;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    private void Start()
+    private void Awake()
     {
         _moveAction = InputSystem.actions.FindAction("Move");
         _moveAction.Enable();
@@ -43,11 +45,11 @@ public class Player : MonoBehaviour
 
         _jumpBufferTimer = this.AddComponent<Timer>();
         _jumpBufferTimer.duration = jumpBufferTime;
-        _jumpBufferTimer.ResetCondition = () => _jumpAction.triggered;
+        _jumpBufferTimer.ResetFunc = () => _jumpAction.triggered;
 
         _coyoteTimer = this.AddComponent<Timer>();
         _coyoteTimer.duration = coyoteTime;
-        _coyoteTimer.ResetCondition = IsGrounded;
+        _coyoteTimer.ResetFunc = IsGrounded;
     }
 
     private void FixedUpdate()
@@ -109,6 +111,9 @@ public class Player : MonoBehaviour
             _coyoteTimer.TimeOut();
             ApplyJump();
         }
+
+        var jumpCancel = _rb.linearVelocity.y > 0 && !_jumpAction.IsPressed();
+        if (jumpCancel) CancelJump();
     }
 
     private void ApplyJump()
@@ -119,16 +124,17 @@ public class Player : MonoBehaviour
 
     private float GetGravityScale()
     {
-        var jump = _jumpAction.IsPressed();
-
-
         var isFalling = _rb.linearVelocity.y < 0;
         var isAtApex = Mathf.Abs(_rb.linearVelocity.y) < jumpApexTresHold;
-        var jumpCancel = !isFalling && !jump;
 
-        if (jumpCancel || isFalling) return 2f;
+        if (isFalling) return 2f;
         if (isAtApex) return 0.9f;
 
         return 1.0f;
+    }
+
+    private void CancelJump()
+    {
+        _rb.AddForce(Vector2.down * (_rb.linearVelocity.y * 0.1f), ForceMode2D.Impulse);
     }
 }
