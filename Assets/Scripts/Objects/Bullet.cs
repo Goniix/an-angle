@@ -12,7 +12,7 @@ public class Bullet : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        Destroy(this);
+        Destroy(gameObject);
     }
 
     public void Throw(Vector2 direction, float strength)

@@ -1,3 +1,4 @@
+using FishNet.Object;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,23 +7,20 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(SpriteRenderer))]
-public class Player : MonoBehaviour
+public class PlayerBehavior : NetworkBehaviour
 {
     private static readonly int AirBorne = Animator.StringToHash("AirBorne");
     private static readonly int PlayerInput = Animator.StringToHash("PlayerInput");
 
-    //WALK CONSTANTS
-    public int walkSpeed;
+    [Header("Movement")] public int walkSpeed;
+
     public float walkTraction;
     public float groundFriction;
     public float airFriction;
-
-    //JUMP CONSTANTS
     public int jumpStrength;
-    public int jumpApexTresHold;
 
-    //TIMERS
-    public float coyoteTime;
+    [Header("Timers")] public float coyoteTime;
+
     public float jumpBufferTime;
 
     //COMPONENTS
@@ -135,12 +133,8 @@ public class Player : MonoBehaviour
     private float GetGravityScale()
     {
         var isFalling = _rb.linearVelocity.y < 0;
-        var isAtApex = Mathf.Abs(_rb.linearVelocity.y) < jumpApexTresHold;
 
-        if (isFalling) return 2f;
-        if (isAtApex) return 0.9f;
-
-        return 1.0f;
+        return isFalling ? 2f : 1.0f;
     }
 
     private void CancelJump()
