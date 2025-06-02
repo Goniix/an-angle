@@ -1,4 +1,3 @@
-using FishNet.Object;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,7 +6,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(SpriteRenderer))]
-public class PlayerBehavior : NetworkBehaviour
+public class PlayerBehavior : MonoBehaviour
 {
     private static readonly int AirBorne = Animator.StringToHash("AirBorne");
     private static readonly int PlayerInput = Animator.StringToHash("PlayerInput");

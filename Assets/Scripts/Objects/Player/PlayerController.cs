@@ -1,12 +1,11 @@
-using FishNet.Object;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerBehavior))]
-public class PlayerController : NetworkBehaviour
+public class PlayerController : MonoBehaviour
 {
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-        if (!IsOwner) gameObject.GetComponent<PlayerBehavior>().enabled = false;
-    }
+    // public override void OnStartClient()
+    // {
+    //     base.OnStartClient();
+    //     if (!IsOwner) gameObject.GetComponent<PlayerBehavior>().enabled = false;
+    // }
 }
