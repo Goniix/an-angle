@@ -1,8 +1,9 @@
+using Mirror;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Gun : MonoBehaviour
+public class Gun : NetworkBehaviour
 {
     public Bullet bulletPrefab;
     public float strength;
@@ -13,29 +14,53 @@ public class Gun : MonoBehaviour
 
     private InputAction _fireAction;
 
-    private void Awake()
-    {
-        _fireAction = InputSystem.actions.FindAction("Attack");
-        _fireAction.Enable();
+    private bool _clientFirePressed;
+    private Vector2 _clientMousePos;
 
-        _cooldownTimer = this.AddComponent<Timer>();
-        _cooldownTimer.duration = cooldownTime;
-        _cooldownTimer.ResetFunc = _fireAction.IsPressed;
-        _cooldownTimer.allowResetBeforeTimeout = false;
-
-        _cam = Camera.main;
-    }
 
     // Update is called once per frame
     private void Update()
     {
-        if (_fireAction.IsPressed() && _cooldownTimer.TimedOut()) Fire();
+        if (isLocalPlayer)
+            CmdUpdateInput(
+                _fireAction.IsPressed(),
+                _cam.ScreenToWorldPoint(Mouse.current.position.value)
+            );
+        if (isServer)
+            if (_clientFirePressed && _cooldownTimer.TimedOut())
+                Fire();
     }
 
+    [Server]
+    public override void OnStartServer()
+    {
+        _cooldownTimer = this.AddComponent<Timer>();
+        _cooldownTimer.duration = cooldownTime;
+        _cooldownTimer.allowResetBeforeTimeout = false;
+    }
+
+    [Client]
+    public override void OnStartLocalPlayer()
+    {
+        _fireAction = InputSystem.actions.FindAction("Attack");
+        _fireAction.Enable();
+
+        _cam = Camera.main;
+    }
+
+    [Server]
     private void Fire()
     {
-        var bullet = Instantiate(bulletPrefab, transform);
-        var mousePos = (Vector2)_cam.ScreenToWorldPoint(Mouse.current.position.value);
-        bullet.Throw(mousePos - (Vector2)transform.position, strength);
+        _cooldownTimer.Restart();
+        var bullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
+        NetworkServer.Spawn(bullet.gameObject);
+        bullet.Throw(_clientMousePos - (Vector2)transform.position, strength);
+    }
+
+    [Command]
+    private void CmdUpdateInput(bool fire, Vector2 mousePos)
+    {
+        _clientFirePressed = fire;
+        _clientMousePos = mousePos;
     }
 }

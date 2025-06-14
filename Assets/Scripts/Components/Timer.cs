@@ -39,7 +39,7 @@ public class Timer : MonoBehaviour
         return _counter <= 0;
     }
 
-    private void Restart()
+    public void Restart()
     {
         _counter = duration;
     }

@@ -1,3 +1,4 @@
+using Mirror;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,7 +7,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(SpriteRenderer))]
-public class PlayerBehavior : MonoBehaviour
+public class PlayerBehavior : NetworkBehaviour
 {
     private static readonly int AirBorne = Animator.StringToHash("AirBorne");
     private static readonly int PlayerInput = Animator.StringToHash("PlayerInput");
@@ -35,31 +36,34 @@ public class PlayerBehavior : MonoBehaviour
     //INPUT ACTIONS
     private InputAction _moveAction;
     private InputAction _jumpAction;
+    private Vector2 _clientInput;
+    private bool _clientJumpPressed;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    private void Awake()
+    [SyncVar] private bool _flipSpriteX;
+
+    public void Start()
     {
-        _moveAction = InputSystem.actions.FindAction("Move");
-        _moveAction.Enable();
-        _jumpAction = InputSystem.actions.FindAction("Jump");
-        _jumpAction.Enable();
-
         _rb = GetComponent<Rigidbody2D>();
         _boxProjector = GetComponent<BoxProjector>();
         _animator = GetComponent<Animator>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
+    }
 
-        _jumpBufferTimer = this.AddComponent<Timer>();
-        _jumpBufferTimer.duration = jumpBufferTime;
-        _jumpBufferTimer.ResetFunc = () => _jumpAction.triggered;
 
-        _coyoteTimer = this.AddComponent<Timer>();
-        _coyoteTimer.duration = coyoteTime;
-        _coyoteTimer.ResetFunc = IsGrounded;
+    private void Update()
+    {
+        _spriteRenderer.flipX = _flipSpriteX;
+
+        if (!isLocalPlayer) return;
+
+        CmdUpdateInput(_moveAction.ReadValue<Vector2>(), _jumpAction.IsPressed());
+        if (_jumpAction.triggered) CmdJumpPressed();
     }
 
     private void FixedUpdate()
     {
+        if (!isServer) return;
+
         var input = GetInput();
 
         ApplyHorizontalMovement(input);
@@ -70,19 +74,55 @@ public class PlayerBehavior : MonoBehaviour
         _animator.SetBool(AirBorne, !IsGrounded());
         _animator.SetBool(PlayerInput, input.magnitude > 0);
 
-        _spriteRenderer.flipX = input.x < 0;
+        _flipSpriteX = input.x < 0;
     }
 
+    [Client]
+    public override void OnStartLocalPlayer()
+    {
+        _moveAction = InputSystem.actions.FindAction("Move");
+        _moveAction.Enable();
+        _jumpAction = InputSystem.actions.FindAction("Jump");
+        _jumpAction.Enable();
+    }
+
+    [Server]
+    public override void OnStartServer()
+    {
+        _coyoteTimer = this.AddComponent<Timer>();
+        _coyoteTimer.duration = coyoteTime;
+        _coyoteTimer.ResetFunc = IsGrounded;
+
+        _jumpBufferTimer = this.AddComponent<Timer>();
+        _jumpBufferTimer.duration = jumpBufferTime;
+    }
+
+    [Server]
     private Vector2 GetInput()
     {
-        return _moveAction.ReadValue<Vector2>();
+        return _clientInput;
     }
 
+    [Command]
+    private void CmdUpdateInput(Vector2 input, bool jump)
+    {
+        _clientInput = input;
+        _clientJumpPressed = jump;
+    }
+
+    [Command]
+    private void CmdJumpPressed()
+    {
+        _jumpBufferTimer.Restart();
+    }
+
+    [Server]
     private bool IsGrounded()
     {
         return _boxProjector.Collides();
     }
 
+    [Server]
     private void ApplyHorizontalMovement(Vector2 input)
     {
         var targetSpeed = input.x * walkSpeed;
@@ -98,6 +138,7 @@ public class PlayerBehavior : MonoBehaviour
         _rb.AddForce(Vector2.right * (movement * Time.deltaTime));
     }
 
+    [Server]
     private void ApplyFriction(Vector2 input)
     {
         if (input.x == 0)
@@ -110,6 +151,7 @@ public class PlayerBehavior : MonoBehaviour
         }
     }
 
+    [Server]
     private void ApplyVerticalMovement()
     {
         if (!_jumpBufferTimer.TimedOut() && !_coyoteTimer.TimedOut())
@@ -119,16 +161,18 @@ public class PlayerBehavior : MonoBehaviour
             ApplyJump();
         }
 
-        var jumpCancel = _rb.linearVelocity.y > 0 && !_jumpAction.IsPressed();
+        var jumpCancel = _rb.linearVelocity.y > 0 && !_clientJumpPressed;
         if (jumpCancel) CancelJump();
     }
 
+    [Server]
     private void ApplyJump()
     {
         _rb.linearVelocityY = Mathf.Max(0, _rb.linearVelocityY); //reset velocity if falling
         _rb.AddForce(Vector2.up * jumpStrength, ForceMode2D.Impulse);
     }
 
+    [Server]
     private float GetGravityScale()
     {
         var isFalling = _rb.linearVelocity.y < 0;
@@ -136,6 +180,7 @@ public class PlayerBehavior : MonoBehaviour
         return isFalling ? 2f : 1.0f;
     }
 
+    [Server]
     private void CancelJump()
     {
         _rb.AddForce(Vector2.down * (_rb.linearVelocity.y * 0.1f), ForceMode2D.Impulse);
