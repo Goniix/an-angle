@@ -20,6 +20,13 @@ public class Bullet : NetworkBehaviour
     [Server]
     public void Throw(Vector2 direction, float strength)
     {
-        _rb.AddForce(direction.normalized * strength);
+        _rb.AddForce(direction.normalized * strength, ForceMode2D.Impulse);
+        RpcInitSyncRigibody(_rb.linearVelocity);
+    }
+
+    [ClientRpc]
+    private void RpcInitSyncRigibody(Vector2 velocity)
+    {
+        _rb.linearVelocity = velocity;
     }
 }
