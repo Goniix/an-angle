@@ -11,7 +11,7 @@ public class Gun : NetworkBehaviour
 
     private Timer _cooldownTimer;
     private Camera _cam;
-
+    private Ownership _parentTeam;
     private InputAction _fireAction;
 
     private bool _clientFirePressed;
@@ -19,6 +19,12 @@ public class Gun : NetworkBehaviour
 
 
     // Update is called once per frame
+
+    public void Start()
+    {
+        _parentTeam = GetComponentInParent<Ownership>();
+    }
+
     private void Update()
     {
         if (isLocalPlayer)
@@ -53,6 +59,9 @@ public class Gun : NetworkBehaviour
     {
         _cooldownTimer.Restart();
         var bullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
+
+        if (_parentTeam) bullet.SetTeam(_parentTeam);
+
         NetworkServer.Spawn(bullet.gameObject);
         bullet.Throw(_clientMousePos - (Vector2)transform.position, strength);
     }

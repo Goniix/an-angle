@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(Ownership))]
 public class PlayerBehavior : NetworkBehaviour
 {
     private static readonly int AirBorne = Animator.StringToHash("AirBorne");
@@ -28,6 +29,7 @@ public class PlayerBehavior : NetworkBehaviour
     private Rigidbody2D _rb;
     private Animator _animator;
     private SpriteRenderer _spriteRenderer;
+    private Ownership _ownership;
 
     //RUNTIME COMPONENTS
     private Timer _coyoteTimer;
@@ -47,8 +49,9 @@ public class PlayerBehavior : NetworkBehaviour
         _boxProjector = GetComponent<BoxProjector>();
         _animator = GetComponent<Animator>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        _ownership = GetComponent<Ownership>();
+        _ownership.ownerId = (int)netId;
     }
-
 
     private void Update()
     {
